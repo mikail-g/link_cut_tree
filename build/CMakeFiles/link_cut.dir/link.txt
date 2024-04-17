@@ -1,0 +1,2 @@
+/usr/bin/ar qc liblink_cut.a CMakeFiles/link_cut.dir/link_cut.cpp.o
+/usr/bin/ranlib liblink_cut.a

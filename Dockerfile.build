@@ -1,0 +1,28 @@
+FROM ubuntu:20.04 as base
+
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/New_York
+
+RUN apt-get update \ 
+    && apt-get install --assume-yes --no-install-recommends --quiet \
+    build-essential \
+    apt-utils \
+    ssh \
+    openmpi-bin \
+    libopenmpi-dev \ 
+    cmake \
+    git \
+    g++ \
+    make \
+    python3.7 \
+    python3-pip \
+    wget \
+    curl \
+    zlib1g \
+    openssh-server \
+    net-tools \
+    iputils-ping \
+    vim \
+    valgrind \
+    gdb \
+ && apt-get clean all
