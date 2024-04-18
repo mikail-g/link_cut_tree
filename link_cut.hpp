@@ -49,7 +49,7 @@ class splay_t {
     node* select(node *T, int k); //find == select
     int rank(node *e);
 
-    void del(node *e);
+    void del(node *T, int key);
     node* insert(node *T, int key);
     node *bst_insert(node* T, int k);
 

@@ -1,5 +1,6 @@
 #include "link_cut.hpp"
 
+/* HELPER FUNC: Print in-order traversal of BST */
 void splay_t::inorder(node *T)
 {
     if (T == NULL)
@@ -9,22 +10,18 @@ void splay_t::inorder(node *T)
     inorder(T->right);
 }
 
+
+/* up_rotate_right(x): rotates an element, x, up towards the root on the right */
 void splay_t::up_rotate_right(node *x){
     if(x->parent == NULL) //nothing to rotate with
         return;
 
-    std::cout << "x = ";
-    x->print_node(); std::cout << std::endl;
-
     node *y = x->parent;
-    std::cout << "y = ";
-    y->print_node(); std::cout << std::endl;
-
     y->left = x->right;
     if(y->left != NULL)
         y->left->parent = y;
+    
     x->right = y;
-
     x->parent = y->parent;
     if(x->parent != NULL){
         if(x->parent->left == y)
@@ -32,6 +29,7 @@ void splay_t::up_rotate_right(node *x){
         else
             x->parent->right = x;
     }
+    
     y->parent = x;
     
     y->size -= x->size; //y loses size(x)
@@ -39,30 +37,20 @@ void splay_t::up_rotate_right(node *x){
     if(y->left != NULL)
         y->size += y->left->size; //y regains size of x's previous right sub-tree
 
-    std::cout << "y = ";
-    y->print_node(); std::cout << std::endl;
-
-     std::cout << "updated x = ";
-    x->print_node(); std::cout << std::endl;
 
 }
 
+/* up_rotate_left(x): rotates an element, x, up towards the root on th left */
 void splay_t::up_rotate_left(node* x) {
     if(x->parent == NULL)
         return;
-    std::cout << "x = ";
-    x->print_node(); std::cout << std::endl;
 
     node *y = x->parent;
-    std::cout << "y = ";
-    y->print_node(); std::cout << std::endl;
-
     y->right = x->left;
     if(y->right != NULL)
         y->right->parent = y;
 
     x->left = y;
-
     x->parent = y->parent;
     if(x->parent != NULL){
         if(x->parent->left == y)
@@ -70,53 +58,68 @@ void splay_t::up_rotate_left(node* x) {
         else
             x->parent->right = x;
     }
+
     y->parent = x;
 
-    y->size -= x->size; //y loses size(x)
-    x->size += y->size; //x gains size(updated y)
+    y->size -= x->size;
+    x->size += y->size; 
     if(y->right != NULL)
-        y->size += y->right->size; //y regains size of x's previous left sub-tree
-
-    std::cout << "y = ";
-    y->print_node(); std::cout << std::endl;
-
-    std::cout << "updated x = ";
-    x->print_node(); std::cout << std::endl;
+        y->size += y->right->size; 
 }
 
+/* check if an element, e, is inline with it's parent and grand-parent on the left */
 bool splay_t::inline_left(node *e){
     if(e->parent->left != e || e->parent->parent->left != e->parent)
         return false;
     return true;
 }
 
+/* check if an element, e, is inline with it's parent and grand-parent on the right */
 bool splay_t::inline_right(node *e){
     if(e->parent->right != e || e->parent->parent->right != e->parent)
         return false;
     return true;
 }
 
+/* split the splay tree on a desired element:
+    1. splay the element to the root such that:
+        1.1 e->left are all e's with key <= e->key
+        1.2 e->right are all e's with key > e->key 
+    2. return e->right
+    
+*/
+splay_t::node* splay_t::split(node *e){
+    splay(e);
+    node *ret = e->right;
+    e->size -= e->right->size;
+    e->right = NULL;
+    return ret;
+};
+
+/*  Join two splay trees T1 and T2:
+    1. splay the maximum element in T1 to the root
+    2. attach T2 as its right subtree
+    3. update sizes and parent pointers
+*/
+splay_t::node* splay_t::join(node *T1, node *T2) {
+    splay(subtree_max(T1));
+    T1->right = T2;
+    T1->size += T2->size;
+    T2->parent = T1;
+    return T1;
+}
+
+/* Find the maximum key of a subtree (e.g. bottom point on the right spine) */
 splay_t::node* splay_t::subtree_max(node *T){
     if(T == NULL || T->right == NULL)
         return T;
     return subtree_max(T->right);
 }
 
-splay_t::node* splay_t::split(node *e){
-    splay(e);
-    node *ret = e->right;
-    e->right = NULL;
-    return ret;
-};
-
-splay_t::node* splay_t::join(node *T1, node *T2) {
-    splay(subtree_max(T1));
-    T1->right = T2;
-    return T1;
-}
-
+/* given a key, k, find if the element exists in the tree -- if it doesn't return NULL */
 splay_t::node* splay_t::find(node *T, int k) {
     if(T == NULL) return NULL;
+
     if(k == T->key)
         return T;
     if(k < T->key)
@@ -125,6 +128,7 @@ splay_t::node* splay_t::find(node *T, int k) {
         return find(T->right, k);
 }
 
+/* Given an index in the sequence, return the element (e.g. order-index element) */
 splay_t::node* splay_t::select(node *T, int k) {
     if(T == NULL || T->left == NULL || T->right == NULL)
         return T;
@@ -132,12 +136,19 @@ splay_t::node* splay_t::select(node *T, int k) {
     int r = T->left->size;
     if(k == r) 
         return T;
-    if(k < r)
+    if(k < r){
+        if(T->left == NULL)
+            return T;
         return select(T->left, k);
-    else
+    }
+    else {
+        if(T->right == NULL)
+            return T;
         return select(T->right, k-r-1);
+    }
 }
 
+/* get the order index of an element */
 int splay_t::rank(node *e){
     return e->left->size;
 } 
@@ -204,6 +215,23 @@ splay_t::node* splay_t::insert(node *T, int k) {
     return e;
 }
 
-void splay_t::del(node *e){
-    e = join(e->left, e->right);
+void splay_t::del(node *T, int key) {
+    auto *e = find(T, 9);
+    node *e_parent = e->parent;
+
+    e->parent = NULL; //disconnect e from the tree, making a new tree with e as the root
+    auto ret = join(e->left, e->right);
+    ret->parent = e_parent;
+
+    //reconnect e's children back to the original tree
+    if(e == e_parent->left)
+        e_parent->left = ret;
+    else if(e == e_parent->right)
+        e_parent->right = ret;
+
+    //update sizes along the upwards path
+    while(e_parent != NULL){
+        e_parent->size--;
+        e_parent = e_parent->parent;
+    }
 }

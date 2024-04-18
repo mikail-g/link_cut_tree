@@ -22,12 +22,11 @@ int main(int argc, char *argv[]){
     splay_tree.inorder(T); std::cout << std::endl;
 
     std::cout << "printing initial tree: " << std::endl;
-    splay_tree.inorder(T);
+    splay_tree.inorder(T); std::cout << std::endl;
 
-    // auto existing_e = splay_tree.select(T, 4);
-    // std::cout << "selected element: " << existing_e->key << ", should be (4)" << std::endl;
-    // auto nonexisting_e = splay_tree.select(T, 8);
-    // std::cout << "selected element: " << nonexisting_e->key << ", should be (7 or 9)" << std::endl;
+    splay_tree.del(T, 9);
+    std::cout << std::endl;
+    splay_tree.inorder(T);
 
     // splay_tree.splay(existing_e);
     // std::cout << "printing updated tree" << std::endl;
