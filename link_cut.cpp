@@ -269,45 +269,32 @@ void splay_t::del(node *T, int key) {
 }
 
 
-std::vector<splay_t::node *> get_path(splay_t::node *P, int lvl) {
-
+std::vector<splay_t::node*> get_path(splay_t::node *P, int lvl) {
+    std::vector<splay_t::node*> paths;
     while(P != NULL) { 
         splay_t::node *path = splay_tree.insert(NULL, P->data, lvl);
-        if(rov->left != NULL) {
-            if(rov->right != NULL) {
-                if(rov->right->size >= rov->left->size)
-                    path = splay_tree.insert(path, P->data, ++lvl);
-                    get_path(P->left, lvl)
+        if(P->left != NULL) {
+            if(P->right != NULL) {
+                if(P->right->size >= P->left->size) {
+                    path = splay_tree.insert(path, P->right, ++lvl); //add the desired node to path and get the other paths
+                    paths.push_back(get_path(P->left, lvl)); //recurse the left subtree for paths
+                    P = P->right;
+                } 
                 else
-
+                    paths.push_back(get_path(P->right, vl));
+            } else {//otherwise we are choosing p->left, if p->right is null the vector returns empty
+                path = splay_tree.insert(path, P->left, ++lvl); 
+                P = P->left;
             }
-
-                if(rov->right != NULL && rov->right->size >= rov->left->size) {
-                    path = splay_tree.insert(path, l);
-                }
-                path = splay_tree.insert(path, rov->left->key);
-        } else if(rover->right != NULL)
-                path = splay_tree.insert(path, rov->right->key); 
-    }
-
-
-        while(there is a next node){
-            if(rov->left != NULL) {
-                if(rov->right != NULL && rov->right->size >= rov->left->size) {
-                    path = splay_tree.insert(path, l);
-                }
-                path = splay_tree.insert(path, rov->left->key);
-            } else if(rover->right != NULL)
-                    path = splay_tree.insert(path, rov->right->key); 
-            else {
-                paths.push_back(path);
-                
+        } 
+        else {
+            if(P->right != NULL) {
+                path = splay_tree.insert(path, P->right, ++lvl); //add the desired node to path and get the other paths
+                P = P->right;
             }
         }
-        paths.push_back(path);
-
-
     }
+    return paths.push_back(path);
 }
 
 
