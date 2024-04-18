@@ -28,9 +28,9 @@ int main(int argc, char *argv[]){
     std::cout << std::endl;
     splay_tree.inorder(T);
 
-    // splay_tree.splay(existing_e);
-    // std::cout << "printing updated tree" << std::endl;
-    // splay_tree.inorder(T);
+    splay_tree.splay(existing_e);
+    std::cout << "printing updated tree" << std::endl;
+    splay_tree.inorder(T);
 
     return 0;
 }

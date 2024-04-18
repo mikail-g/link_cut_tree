@@ -6,9 +6,10 @@
 #include <math.h>
 #include <memory>
 #include <iostream>
+#include <unordered_map>
 
-
-class splay_t {
+template <typename T>
+class splay_t<T> {
     public:
     struct node {
             int key = -1;
@@ -16,9 +17,11 @@ class splay_t {
             node *right = NULL;
             node *parent = NULL;
             int size = 0;
+            T *data = NULL;
 
-            node(int k){
+            node(T &dat, int k){
                 key = k;
+                data = dat;
                 size = 1;
             }
 
@@ -41,62 +44,56 @@ class splay_t {
     bool inline_right(node *e);
     node* subtree_max(node *T);
 
-    void splay(node *e); 
+    node* splay(node *e); 
     node* split(node *e);
     node* join(node *T1, node *T2); 
 
-    node *find(node *T, int k);
+    node* find(node *T, int k);
     node* select(node *T, int k); //find == select
     int rank(node *e);
 
     void del(node *T, int key);
     node* insert(node *T, int key);
-    node *bst_insert(node* T, int k);
+    node* insert(node *T, T dat, int k);
+    node* bst_insert(node* T, int k);
 
     void inorder(node *T);
 
-}; 
-
-// class link_cut : splay_t {
-
-//     access(node *v){
-//         // nove v will have no preferred children, and is placed at end of path
-
-//         //nodes in aux tree are keyed at depth, meaning any nodes to the right of v in aux tree are disconnected.
-
-//         //steps:
-//             //1. splay tree at v, bringing v to root of aux tree
-//             //2. disconnect right subtree of v
-//             //3. *path-parent for root of disconnected tree -> v
-
-//             //walk up the rep tree to the root R, and resettle preferred path where necessary:
-//                 //follow *parent-path from v:
-//                     //4. if path v is contains R (e.g. left-most node in the aux tree), then *parent = NULL; return
-//                     //5. else follow *parent-path along some other path w, where we break old preferred path off w and reconnect it to path v is on
-//                     //5.a splay at w and disconnect right subtree
+};
 
 
-//         splay(v);
-//         switch_preffered_child(v, null);
-//         if(path-parent(v) != NULL){
-//             w = path_parent(v);
-//             splay(w);
-//             switch_preferred_child(w,v);
-//             access(v);
-//         }
-//     }
+/* Structure:   Idea is to reprsent the tree as a subset of link-cuts
 
+The represented tree, T, is a tree of arbitrary, unordered nodes split into paths represented by auxillary trees, S, 
+                    Nodes from left -> right in the S trees represent the path from the root to the last node on the path (e.g. an inorder traversal)
+                    Connected nodes in the represented tree, T, that are not on the same preerred path (and therefore not in the same aux tree S), 
+                    are connected via a path-parent pointer, which is stored in the root of the aux tree S, presenting the path
 
+        Preferred paths:    When an access to a node, v, is made in the represented tree, T, that path that is taken becomes the preffered path. 
+                            The preferred child of a node is the last child that was on the preferred path, or NULL if the last access was to itself 
+                            or has not been accessed
+                            A preferred edge connects to the preferred child 
+    
+*/
+class link_cut : public splay_t{
 
+    struct aux_t { //represented tree node (e.g. a preferred path and it's parent pointer in the original T)
+        splay_t::node *path;
+        splay_t::node *path_parent_ptr; 
+        aux_t *pref_child = NULL;
+    };
+    
 
+    lc_node *make_tree(int n);
 
-//     public: 
-//     find_root(node *v);
-//     cut(node *v);
-//     link(node *v1, node *v2);
-//     path(node *v1);
+    splay_t::node *access(splay_t::node *v); 
+    void switch_preferred_child(node *x, node *y);
 
-// }
+    public: 
+    node *find_root(node *v);
+    void cut(node *v);
+    void link(node *v1, node *v2);
+};
 
 
 #endif /* ----- #ifndef _LINKCUT_H  ----- */
