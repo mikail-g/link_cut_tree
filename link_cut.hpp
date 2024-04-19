@@ -7,9 +7,10 @@
 #include <memory>
 #include <iostream>
 #include <unordered_map>
+#include <vector>
+#include <cassert>
 
-template <typename T>
-class splay_t<T> {
+class splay_t{
     public:
     struct node {
             int key = -1;
@@ -17,11 +18,13 @@ class splay_t<T> {
             node *right = NULL;
             node *parent = NULL;
             int size = 0;
-            T *data = NULL;
 
-            node(T &dat, int k){
+            node *path_parent_ptr;
+
+            node(int k, node *P){
+                if(P != NULL)
+                    path_parent_ptr = P;
                 key = k;
-                data = dat;
                 size = 1;
             }
 
@@ -49,15 +52,16 @@ class splay_t<T> {
     node* join(node *T1, node *T2); 
 
     node* find(node *T, int k);
-    node* select(node *T, int k); //find == select
+    node* select(node *T, int k); 
     int rank(node *e);
 
-    void del(node *T, int key);
-    node* insert(node *T, int key);
-    node* insert(node *T, T dat, int k);
+    void delete_key(node *T, int key);
+    void delete_element(node *e); 
+    node* insert(node *T, int k, node *P);
     node* bst_insert(node* T, int k);
 
     void inorder(node *T);
+    void delete_tree(node *T);
 
 };
 
@@ -76,23 +80,19 @@ The represented tree, T, is a tree of arbitrary, unordered nodes split into path
     
 */
 class link_cut : public splay_t{
-
-    struct aux_t { //represented tree node (e.g. a preferred path and it's parent pointer in the original T)
-        splay_t::node *path;
-        splay_t::node *path_parent_ptr; 
-        aux_t *pref_child = NULL;
-    };
+    public:
+    static const int MAX_KEY = 10;
     
+    splay_t::node* make_tree(int n);
+    splay_t::node* find_path(splay_t::node *P, int lvl, std::vector<splay_t::node*> &paths);
 
-    lc_node *make_tree(int n);
+    // splay_t::node *access(splay_t::node *v); 
+    // void switch_preferred_child(node *x, node *y);
 
-    splay_t::node *access(splay_t::node *v); 
-    void switch_preferred_child(node *x, node *y);
-
-    public: 
-    node *find_root(node *v);
-    void cut(node *v);
-    void link(node *v1, node *v2);
+    // public: 
+    // node *find_root(node *v);
+    // void cut(node *v);
+    // void link(node *v1, node *v2);
 };
 
 

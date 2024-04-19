@@ -1,6 +1,6 @@
 #include "link_cut.hpp"
 
-/* HELPER FUNC: Print in-order traversal of BST */
+/* Print in-order traversal of BST */
 void splay_t::inorder(node *T)
 {
     if (T == NULL)
@@ -10,11 +10,25 @@ void splay_t::inorder(node *T)
     inorder(T->right);
 }
 
+void splay_t::delete_tree(node *T)
+{
+    if (T == NULL)
+        return;
+    delete_tree(T->left);
+    delete_tree(T->right);
+    delete T;
+    T = NULL;
+}
 
 /* up_rotate_right(x): rotates an element, x, up towards the root on the right */
 void splay_t::up_rotate_right(node *x){
     if(x->parent == NULL) //nothing to rotate with
         return;
+
+    if(x->parent->parent == NULL){ //if parent is the root, take the path_parent_ptr;
+        x->path_parent_ptr = x->path_parent_ptr;
+        x->parent->path_parent_ptr = NULL;
+    }
 
     node *y = x->parent;
     y->left = x->right;
@@ -40,10 +54,15 @@ void splay_t::up_rotate_right(node *x){
 
 }
 
-/* up_rotate_left(x): rotates an element, x, up towards the root on th left */
+/* up_rotate_left(x): rotates an element, x, up towards the root on the left */
 void splay_t::up_rotate_left(node* x) {
     if(x->parent == NULL)
         return;
+
+    if(x->parent->parent == NULL){ //if parent is the root, take the path_parent_ptr;
+        x->path_parent_ptr = x->path_parent_ptr;
+        x->parent->path_parent_ptr = NULL;
+    }
 
     node *y = x->parent;
     y->right = x->left;
@@ -102,6 +121,10 @@ splay_t::node* splay_t::split(node *e){
     3. update sizes and parent pointers
 */
 splay_t::node* splay_t::join(node *T1, node *T2) {
+    if(T1 == NULL)
+        return T2;
+    if(T2 == NULL)
+        return T1;
     splay(subtree_max(T1));
     T1->right = T2;
     T1->size += T2->size;
@@ -118,10 +141,15 @@ splay_t::node* splay_t::subtree_max(node *T){
 
 /* given a key, k, find if the element exists in the tree -- if it doesn't return NULL */
 splay_t::node* splay_t::find(node *T, int k) {
-    if(T == NULL) return NULL;
+    if(T == NULL) 
+        return NULL;
 
-    if(k == T->key)
+    std::cout << "looking for element " << k << "my element id = " << T->key << std::endl;
+    if(k == T->key) {
+        std::cout << "found element, returning e "; 
+        T->print_node(); std::cout << std::endl;
         return T;
+    }
     if(k < T->key)
         return find(T->left, k);
     else
@@ -130,22 +158,16 @@ splay_t::node* splay_t::find(node *T, int k) {
 
 /* Given an index in the sequence, return the element (e.g. order-index element) */
 splay_t::node* splay_t::select(node *T, int k) {
-    if(T == NULL || T->left == NULL || T->right == NULL)
+    if(T == NULL)
         return T;
 
-    int r = T->left->size;
-    if(k == r) 
+    int r = T->left == NULL ? 0 : T->left->size;
+    if(k == r)
         return T;
-    if(k < r){
-        if(T->left == NULL)
-            return T;
+    if(k < r)
         return select(T->left, k);
-    }
-    else {
-        if(T->right == NULL)
-            return T;
+    else
         return select(T->right, k-r-1);
-    }
 }
 
 /* get the order index of an element */
@@ -163,7 +185,7 @@ int splay_t::rank(node *e){
 splay_t::node *splay_t::splay(node *e) {
     while(e->parent != NULL) { 
         if(e->parent->parent == NULL) { //if e is one step below root --> just rotate up to root
-            if(e == e->parent->left) 
+            if(e == e->parent->left)
                 up_rotate_right(e);
             else
                 up_rotate_left(e);
@@ -184,9 +206,9 @@ splay_t::node *splay_t::splay(node *e) {
     return e;
 }
 
-splay_t::node* splay_t::insert(node *T, int k) {
+splay_t::node* splay_t::insert(node *T, int k, node *P) {
     if(T == NULL)
-        return new node(k);
+        return new node(k, P);
 
     //find parent node    
     node *rov = T;
@@ -200,13 +222,13 @@ splay_t::node* splay_t::insert(node *T, int k) {
     }
 
     //insert e into the BST
-    node *e = new node(k);
+    node *e = new node(k, P);
     e->parent = parent;
     if(k < parent->key) 
         parent->left = e;
     else 
         parent->right = e;
-    //update subtree sizes along the path
+    //update subtree sizes along the parent path
     while(parent != NULL) {
         parent->size++;
         parent = parent->parent;
@@ -215,244 +237,161 @@ splay_t::node* splay_t::insert(node *T, int k) {
     return splay(e);
 }
 
-template <typename T>
-splay_t::node* splay_t::insert(node *T, T dat, int k) {
-    if(T == NULL)
-        return new node(dat, k);
-
-    //find parent node    
-    node *rov = T;
-    node *parent = NULL;
-    while(rov != NULL){
-        parent = rov;
-        if(k < rov->key)
-            rov = rov->left;
-        else
-            rov = rov->right;
-    }
-
-    //insert e into the BST
-    node *e = new node(k);
-    e->parent = parent;
-    if(k < parent->key) 
-        parent->left = e;
-    else 
-        parent->right = e;
-    //update subtree sizes along the path
-    while(parent != NULL) {
-        parent->size++;
-        parent = parent->parent;
-    }
-    //spay e to the root
-    return splay(e);
-}
-
-void splay_t::del(node *T, int key) {
-    auto *e = find(T, 9);
-    node *e_parent = e->parent;
-
+void splay_t::delete_element(node *e){
+    if(e == NULL) 
+        return; 
+    
+    auto e_parent = e->parent;
     e->parent = NULL; //disconnect e from the tree, making a new tree with e as the root
     auto ret = join(e->left, e->right);
     ret->parent = e_parent;
+    std::cout << " joined children = ";
+    ret->print_node(); std::cout << std::endl;
 
     //reconnect e's children back to the original tree
-    if(e == e_parent->left)
-        e_parent->left = ret;
-    else if(e == e_parent->right)
-        e_parent->right = ret;
-
+    if(ret->parent != NULL) {
+        if(e == ret->parent->left)
+            ret->parent->left = ret;
+        else
+            ret->parent->right = ret;
+    }
     //update sizes along the upwards path
     while(e_parent != NULL){
         e_parent->size--;
         e_parent = e_parent->parent;
     }
+
+    //delete mem
+    delete e;
+
+}
+
+void splay_t::delete_key(node *T, int key) {
+    auto *e = find(T, key);
+    delete_element(e);
 }
 
 
-std::vector<splay_t::node*> get_path(splay_t::node *P, int lvl) {
-    std::vector<splay_t::node*> paths;
+splay_t::node* link_cut::find_path(splay_t::node *P, int lvl, std::vector<splay_t::node*> &paths) {
+    splay_t::node *path = splay_t::insert(NULL, lvl, P);
     while(P != NULL) { 
-        splay_t::node *path = splay_tree.insert(NULL, P->data, lvl);
         if(P->left != NULL) {
             if(P->right != NULL) {
                 if(P->right->size >= P->left->size) {
-                    path = splay_tree.insert(path, P->right, ++lvl); //add the desired node to path and get the other paths
-                    paths.push_back(get_path(P->left, lvl)); //recurse the left subtree for paths
+                    paths.push_back(find_path(P->left, ++lvl, paths)); //recurse the left subtree for paths
+                    path =  splay_t::insert(path, lvl, NULL); //add the desired node to path and get the other paths
                     P = P->right;
-                } 
-                else
-                    paths.push_back(get_path(P->right, vl));
-            } else {//otherwise we are choosing p->left, if p->right is null the vector returns empty
-                path = splay_tree.insert(path, P->left, ++lvl); 
+                }
+            } else { // recurse the right subtree for other paths and continue left
+                paths.push_back(find_path(P->right, ++lvl, paths));
+                path =  splay_t::insert(path, lvl, NULL); //add left and cont
                 P = P->left;
             }
         } 
-        else {
-            if(P->right != NULL) {
-                path = splay_tree.insert(path, P->right, ++lvl); //add the desired node to path and get the other paths
-                P = P->right;
-            }
+        if(P->right != NULL) { //add the desired node to path and cont
+            path = splay_t::insert(path, ++lvl, NULL); 
+            P = P->right;
         }
     }
-    return paths.push_back(path);
+    paths.push_back(path);
 }
 
 
 
-link_cut::lc_node *make_tree(int n, int max_key){
-    /*  For any arbitrary tree, T, decompose the tree into a set of preferred paths
-        Each path is an ancestor-descendant path represented by a splay tree and keyed by depth in T
-        Each node has 0 or 1 preferred children, and a preferred edge -- we will use partition by size
-        ------------------------------------------------------------------------------------------------ //
-        For testing purposes, lets just create n randomized splay trees that represent some set
-        of preferred paths along some tree
-    */
+splay_t::node *link_cut::make_tree(int n){
+    assert(n > 0);
 
-    paths = get_path(p)
+    srand(89784654L); //seed rand so we get the same numbers for testing 
+    //generate n splay trees
+    std::vector<splay_t::node*> paths; 
+    for(int i = 0; i < n; i++) {
+        std::cout << "current path count: " << i << std::endl;
+        splay_t::node *T = NULL, *parent = NULL; 
+        int start = 0;
+        if(i > 0) {
+            int prev_path = rand() % paths.size(); // choose a random previous path
+            std::cout << "prev path is " << prev_path << std::endl;
 
+            int path_parent = rand() % paths[prev_path]->size; //pick node in prev path
+            std::cout << "rand node = " << path_parent << std::endl;
 
-
-
-
-
-
-
-
-    while(!done){ // get all root -> leaf paths and add them to the vector
-        splay_t::node *path = splay_tree.insert(NULL, 0);
-        int l = 0;
-        if(rov->left != NULL) {
-                if(rov->right != NULL && rov->right->size >= rov->left->size) {
-                    path = splay_tree.insert(path, l);
-                }
-                path = splay_tree.insert(path, rov->left->key);
-            } else if(rover->right != NULL)
-                    path = splay_tree.insert(path, rov->right->key); 
-            else {
-                paths.push_back(path);
-            }
-        }
-
-
-        while(there is a next node){
-            if(rov->left != NULL) {
-                if(rov->right != NULL && rov->right->size >= rov->left->size) {
-                    path = splay_tree.insert(path, l);
-                }
-                path = splay_tree.insert(path, rov->left->key);
-            } else if(rover->right != NULL)
-                    path = splay_tree.insert(path, rov->right->key); 
-            else {
-                paths.push_back(path);
-                
-            }
-        }
-        paths.push_back(path);
-
-
-    }
-
-
-
-
-
-
-
-
-
-
-    srand(time(513545546543)); //seed rand so we get the same numbers for testing 
-
-    std::vector<aux_t> paths; //make auxillary trees
-
-    for(int i = 0; i < n; i++) { 
-        int root = rand % max_key; //choose a random node in the "tree" to represent a root
-        int max_k = rand % ((max_key - (root+1) + 1)) + (root+1); //generate end of splay
-        splay_t::node *T; 
-        for(int j = root; j < max_k; j++){ //build the path of nodes
-            T = splay_tree.insert(T, j);
-        }
-        paths.push_back({T, NULL, NULL});
-    }
-    
-    //set the parent pointer paths of each 
-    int n_paths = paths.size();
-    for(int i = 0; i < n; i++){
-        if(paths[i]->key == 0)
+            parent = splay_t::select(paths[prev_path], path_parent);
+            std::cout << "random parent = "; parent->print_node(); std::cout << std::endl;
             
-        int rand_root = -1;
-        while(rand_root == -1 && ){
-            rand_root = rand % n_paths; //pick a random other splay tree
-            int rand_node = rand % paths[rand_root]->size;
-            if(select(paths[rand_root], rand_node)->key < paths[i]->key) //get the kth elements key
-                rand_root = 
+            start = parent->key+1;
         }
-    }
 
-
-
-
-
-}
-
-
-splay_t::node *access(splay_t::node *v){
-        // node v will have no preferred children, and is placed at end of path
-        //nodes in aux tree are keyed at depth, meaning any nodes to the right of v in aux tree are disconnected.
-        //steps:
-            //1. splay tree at v, bringing v to root of aux tree
-            //2. disconnect right subtree of v
-            //3. *path-parent for root of disconnected tree -> v
-
-            //walk up the rep tree to the root R, and resettle preferred path where necessary:
-                //follow *parent-path from v:
-                    //4. if path v is contains R (e.g. left-most node in the aux tree), then *parent = NULL; return
-                    //5. else follow *parent-path along some other path w, where we break old preferred path off w and reconnect it to path v is on
-                    //5.a splay at w and disconnect right subtree
-
-
-        splay_t::node *aux = splay_t::splay(v); //
-        switch_preffered_child(aux, v, null); //set disconnect v right subtree in S
-        if(v->path_parent_ptr != NULL){
-            node *w = v->path_parent_ptr;
-            splay(w);
-            switch_preferred_child(w,v);
-            access(v);
+        T = splay_t::insert(T, start, parent);
+        
+        int len = rand() % MAX_KEY; //generate random length of path
+        std::cout << "len = " << len << std::endl;
+        for(int j = start+1; j < start+1+len; j++){ //build the path of nodes
+            T = splay_t::insert(T, j, NULL);
         }
-        return aux;
-}
-
-void link_cut::link(node *v, node *w){
-    access(S, v);
-    access(S, w);
-    v->left = w;
-    w->parent = v;
-}
-
-void link_cut::cut(node *v){
-    access(S, v);
-    if(v->left != NULL){
-        v->left->path_parent_ptr = v->path_parent_ptr;
-        v->left = NULL;
+         
+        splay_t::inorder(T); std::cout << std::endl;
+        paths.push_back(T);
     }
-    v->path_parent_ptr = NULL;
+    return paths[0];
 }
 
-void link_cut::switch_preferred_child(node *x, node *y){
-    if(x->right != NULL)
-        x->right->path_parent_ptr = x;
-    x->right = y;
-    if(y != NULL)
-        y->parent = x;
-}
 
-splay_t::node link_cut::*find_root(node *v){
-    node *aux = access(v);
-    node *R = aux;
-    while(R->left != NULL)
-        R = R->left;
-    splay(R);
-}
+// splay_t::node *link_cut::access(splay_t::node *v){
+//         // node v will have no preferred children, and is placed at end of path
+//         //nodes in aux tree are keyed at depth, meaning any nodes to the right of v in aux tree are disconnected.
+//         //steps:
+//             //1. splay tree at v, bringing v to root of aux tree
+//             //2. disconnect right subtree of v
+//             //3. *path-parent for root of disconnected tree -> v
+
+//             //walk up the rep tree to the root R, and resettle preferred path where necessary:
+//                 //follow *parent-path from v:
+//                     //4. if path v is contains R (e.g. left-most node in the aux tree), then *parent = NULL; return
+//                     //5. else follow *parent-path along some other path w, where we break old preferred path off w and reconnect it to path v is on
+//                     //5.a splay at w and disconnect right subtree
+
+
+//         splay_t::node *path = splay_t::splay(v); 
+//         if(v->path_parent_ptr != NULL){
+//             node *w = v->path_parent_ptr;
+//             splay(w);
+//             switch_preferred_child(w,v);
+//             access(v);
+//         }
+//         return path;
+// }
+
+// void link_cut::link(lc_node *v, lc_node *w) {
+//     access(v->path);
+//     access(w->path);
+//     v->left = w;
+//     w->path_parent_ptr = v;
+// }
+
+// void link_cut::cut(node *v){
+//     access(S, v);
+//     if(v->left != NULL){
+//         v->left->path_parent_ptr = v->path_parent_ptr;
+//         v->left = NULL;
+//     }
+//     v->path_parent_ptr = NULL;
+// }
+
+// void link_cut::switch_preferred_child(node *x, node *y){
+//     if(x->right != NULL)
+//         x->right->path_parent_ptr = x;
+//     x->right = y;
+//     if(y != NULL)
+//         y->parent = x;
+// }
+
+// link_cut::lc_node* link_cut::find_root(node *v){
+//     node *aux = access(v);
+//     node *R = aux;
+//     while(R->left != NULL)
+//         R = R->left;
+//     splay(R);
+// }
 
 
 
