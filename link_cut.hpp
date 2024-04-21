@@ -36,6 +36,8 @@ class splay_t{
                     std::cout << ", left child key = " << left->key;
                 if(right != NULL)
                     std::cout << ", right child key = " << right->key;
+                if(path_parent_ptr != NULL)
+                    std::cout << ", path parent key = " << path_parent_ptr->key;
                 std::cout << std::endl;
 
             }
@@ -66,33 +68,41 @@ class splay_t{
 };
 
 
-/* Structure:   Idea is to reprsent the tree as a subset of link-cuts
-
-The represented tree, T, is a tree of arbitrary, unordered nodes split into paths represented by auxillary trees, S, 
-                    Nodes from left -> right in the S trees represent the path from the root to the last node on the path (e.g. an inorder traversal)
+/* Structure: 
+        The represented tree, T, is a tree of arbitrary, unordered nodes split into paths represented by auxillary trees, S, 
+                    Nodes from left -> right in the S trees represent the path from the root to the last node on the path 
                     Connected nodes in the represented tree, T, that are not on the same preerred path (and therefore not in the same aux tree S), 
-                    are connected via a path-parent pointer, which is stored in the root of the aux tree S, presenting the path
+                    are connected via a path-parent pointer, which is stored in the root of the aux tree S, representing the path
 
-        Preferred paths:    When an access to a node, v, is made in the represented tree, T, that path that is taken becomes the preffered path. 
-                            The preferred child of a node is the last child that was on the preferred path, or NULL if the last access was to itself 
-                            or has not been accessed
-                            A preferred edge connects to the preferred child 
-    
+        Solidifying: When an access to a node v is made in the represented tree, we find the path from the node v to the root of the represented tree 
 */
 class link_cut : public splay_t{
     public:
     static const int MAX_KEY = 10;
+    bool verbose = true;
+
+    std::vector<splay_t::node*> paths;
     
-    splay_t::node* make_tree(int n);
+    void make_tree(int n);
     splay_t::node* find_path(splay_t::node *P, int lvl, std::vector<splay_t::node*> &paths);
+    splay_t::node* get_rand_element();
 
-    // splay_t::node *access(splay_t::node *v); 
-    // void switch_preferred_child(node *x, node *y);
+    splay_t::node* access(splay_t::node *v); //needs to find path out of the tree
+    splay_t::node* find_root(splay_t::node *v);
+    splay_t::node* cut(node *v);
+    splay_t::node* link(node *v, node *w);
 
-    // public: 
-    // node *find_root(node *v);
-    // void cut(node *v);
-    // void link(node *v1, node *v2);
+
+    link_cut(bool dbg){
+        if(dbg)
+            verbose = true;
+    }
+
+    ~link_cut(){
+        for(auto &p : paths) 
+            splay_t::delete_tree(p);
+
+    }
 };
 
 
