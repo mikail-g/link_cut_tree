@@ -53,6 +53,7 @@ int main(int argc, char *argv[]){
     bool dbg = argv[1] == "-v" ? true : false;
     //test_splay_tree(20);
 
+    splay_t sp;
     link_cut lc_tree(dbg);
     std::cout << "making tree..." << std::endl;
     lc_tree.make_tree(10);
@@ -67,26 +68,34 @@ int main(int argc, char *argv[]){
 
     std::cout << "done" << std::endl;
 
-    // //mix up the splay tree some by accessing some elements
+    //mix up the splay tree some by accessing some elements
     for(int i = 0; i < 10; i++){
         auto *e = lc_tree.get_rand_element();
         std::cout << "NEW ACCESS e = "; e->print_node();
-        lc_tree.access(e, 0);
+        lc_tree.access(e);
         std::cout << "END" << std::endl;
         print_subtree(e);
     }
 
 
-    // //test some cuts
-    // std::cout << "Testing cut..." << std::endl;
-    // auto r_e = lc_tree.get_rand_element();
-    // auto t = lc_tree.access(r_e);
-    // auto cut_re = lc_tree.cut(r_e);
-    // std::cout << "old tree = "; t->print_node(); std::cout << std::endl;
-    // std::cout << "cut tree = "; cut_re->print_node(); std::cout << std::endl;
+    //test some cuts
+    std::cout << "Testing cut..." << std::endl;
+    auto r_e = lc_tree.get_rand_element();
+    auto t = lc_tree.find_root(r_e); 
+    auto cut_re = lc_tree.cut(r_e);
+    std::cout << "old tree = "; t->print_node(); std::cout << std::endl;
+    std::cout << "cut tree = "; cut_re->print_node(); std::cout << std::endl;
 
-    // std::cout << "check find root after cut" << std::endl;
-    // assert(lc_tree.find_root(t) == lc_tree.find_root(cut_re));
+    for(int i = 0; i < 10; i++){
+        std::cout << "tree " << i << ": "; sp.inorder(lc_tree.paths[i]); std::cout << std::endl;
+    }
+
+    std::cout << "Testing link..." << std::endl;
+    auto w = lc_tree.paths[5];
+    auto v = lc_tree.paths[6];
+    auto l = lc_tree.link(v, w);
+    std::cout << "in order after link: "; sp.inorder(l); std::cout << std::endl;
+    
 
     std::cout << "Test done, exiting" << std::endl;
 

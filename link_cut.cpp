@@ -19,6 +19,7 @@ void splay_t::delete_tree(node *T)
         return;
     delete_tree(T->left);
     delete_tree(T->right);
+    //std::cout << "deleting element " << T->data << std::endl;
     delete T;
 }
 
@@ -202,8 +203,7 @@ int splay_t::rank(node *e){
         3. else rototate e up 2 steps, using alternating single rotation
 */
 splay_t::node *splay_t::splay(node *e) {
-    int i = 0;
-    while(e->parent != NULL && i < 10) { 
+    while(e->parent != NULL) { 
         if(e->parent->parent == NULL) { //if e is one step below root --> just rotate up to root
             if(e == e->parent->left)
                 up_rotate_right(e);
@@ -222,7 +222,6 @@ splay_t::node *splay_t::splay(node *e) {
             up_rotate_left(e);
             up_rotate_right(e);
         }
-        i++;
     }
     return e;
 }
@@ -354,8 +353,8 @@ splay_t::node* link_cut::get_rand_element(){
 void link_cut::make_tree(int n){
     assert(n > 0);
     srand(89784654L); 
-    
-    for(int i = 0, d = 0; i < n; i++) {
+    int d = 0;
+    for(int i = 0; i < n; i++) {
         //std::cout << "current path count: " << i << std::endl;
         splay_t::node *T = NULL, *parent = NULL; 
         int start = 0;
@@ -376,26 +375,26 @@ void link_cut::make_tree(int n){
 }
 
 
-splay_t::node* link_cut::access(splay_t::node *v, int i){
+splay_t::node* link_cut::access(splay_t::node *v){
         std::cout << "Called access on "; v->print_node();
         splay_t::splay(v); //v is now root of it's auxillary tree
         auto v_right = split(v);  //split v and return it's right subtree
         if(v_right != NULL)
             v_right->path_parent_ptr = v;
-        if(v->path_parent_ptr != NULL && i < 5) {
-            std::cout << "v = "; v->print_node();
+        if(v->path_parent_ptr != NULL) {
+            //std::cout << "v = "; v->print_node();
             auto *w = v->path_parent_ptr;
-            std::cout << "w = ";  w->print_node(); 
+            //std::cout << "w = ";  w->print_node(); 
             splay(w);
             auto w_right = split(w);
             if(w_right != NULL) {
                 w_right->path_parent_ptr = w;
-                std::cout << "w->right = ";w_right->print_node();
+                //std::cout << "w->right = ";w_right->print_node();
             }
-            std::cout << "w (after split) = ";  w->print_node();
+            //std::cout << "w (after split) = ";  w->print_node();
             join(w, v);
-            std::cout << "w after join = "; w->print_node();
-            access(v, i++);
+            //std::cout << "w after join = "; w->print_node();
+            access(v);
         }
         //std::cout << "v now at root of tree of the represented tree" << std::endl;
         return v;
@@ -403,8 +402,7 @@ splay_t::node* link_cut::access(splay_t::node *v, int i){
 
 /* find_root(v): Finds the original root of the tree that contains v (e.g. not it's splay tree root, but the root of the tree the splay trees detail) */
 splay_t::node* link_cut::find_root(splay_t::node *v){
-    int i = 0;
-    splay_t::node *R = access(v, 0);
+    splay_t::node *R = access(v);
     while(R->left != NULL)
         R = R->left;
     splay(R);
@@ -417,8 +415,8 @@ splay_t::node* link_cut::find_root(splay_t::node *v){
             2. v is keyed such that all of it's keys are larger than any key stored in w
 */
 splay_t::node* link_cut::link(splay_t::node *v, splay_t::node *w) {
-    access(v, 0);
-    access(w, 0);
+    access(v);
+    access(w);
     join(w, v);
     v->path_parent_ptr = NULL; //now that v is attached to w, it will no longer hold a path-parent-ptr
     return v;
@@ -426,10 +424,11 @@ splay_t::node* link_cut::link(splay_t::node *v, splay_t::node *w) {
 
 /* Cut(v): Detach v from it's current aux tree */
 splay_t::node* link_cut::cut(node *v){
-    access(v, 0);
+    access(v);
     auto path_parent = v->left;
     auto v_subtree = split(v->left); 
-    v_subtree->path_parent_ptr = path_parent;
+    if(v_subtree != NULL)
+        v_subtree->path_parent_ptr = path_parent;
     return v_subtree;
 }
 

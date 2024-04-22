@@ -92,7 +92,7 @@ class link_cut : public splay_t{
     void make_tree(int n);
     splay_t::node* get_rand_element();
 
-    splay_t::node* access(splay_t::node *v, int i); 
+    splay_t::node* access(splay_t::node *v); 
     splay_t::node* find_root(splay_t::node *v);
     splay_t::node* cut(node *v);
     splay_t::node* link(node *v, node *w);
@@ -104,9 +104,10 @@ class link_cut : public splay_t{
     }
 
     ~link_cut(){
-        for(auto &p : paths) 
+        for(auto &p : paths) {
+            //std::cout << "deleting tree " << &p - &paths[0] << std::endl;
             splay_t::delete_tree(p);
-
+        }
     }
 };
 
