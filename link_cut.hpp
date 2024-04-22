@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <vector>
 #include <cassert>
+#include <algorithm>
 
 class splay_t{
     public:
@@ -18,18 +19,21 @@ class splay_t{
             node *right = NULL;
             node *parent = NULL;
             int size = 0;
+            int data = 0;
+            std::vector<node*> dups;
 
             node *path_parent_ptr;
 
-            node(int k, node *P){
+            node(int d, int k, node *P){
                 if(P != NULL)
                     path_parent_ptr = P;
                 key = k;
+                data = d;
                 size = 1;
             }
 
             void print_node(){
-                std::cout << "key: " << key << ", size = " << size;
+                std::cout << "key: " << key << ", data = " << data << ", size = " << size;
                 if(parent != NULL)
                     std::cout << ", parent key = " << parent->key;
                 if(left != NULL)
@@ -48,6 +52,7 @@ class splay_t{
     bool inline_left(node *e);
     bool inline_right(node *e);
     node* subtree_max(node *T);
+    splay_t::node* bst_insert(node *T, node *e);
 
     node* splay(node *e); 
     node* split(node *e);
@@ -57,9 +62,10 @@ class splay_t{
     node* select(node *T, int k); 
     int rank(node *e);
 
-    void delete_key(node *T, int key);
-    void delete_element(node *e); 
-    node* insert(node *T, int k, node *P);
+    // void delete_key(node *T, int key);
+    void swap_edge(node *x, node *y);
+    void delete_element(node *T, node *e); 
+    node* insert(node *T, int data, int k, node *P);
     node* bst_insert(node* T, int k);
 
     void inorder(node *T);
@@ -84,10 +90,9 @@ class link_cut : public splay_t{
     std::vector<splay_t::node*> paths;
     
     void make_tree(int n);
-    splay_t::node* find_path(splay_t::node *P, int lvl, std::vector<splay_t::node*> &paths);
     splay_t::node* get_rand_element();
 
-    splay_t::node* access(splay_t::node *v); //needs to find path out of the tree
+    splay_t::node* access(splay_t::node *v, int i); 
     splay_t::node* find_root(splay_t::node *v);
     splay_t::node* cut(node *v);
     splay_t::node* link(node *v, node *w);

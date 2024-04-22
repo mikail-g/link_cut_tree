@@ -28,6 +28,13 @@ void splay_t::up_rotate_right(node *x){
         return;
 
     node *y = x->parent;
+
+    // std::cout << "x = "; x->print_node();
+    // std::cout << "y = "; y->print_node();
+
+    assert(x != y);
+
+    
     y->left = x->right;
     if(y->left != NULL)
         y->left->parent = y;
@@ -51,6 +58,9 @@ void splay_t::up_rotate_right(node *x){
     if(y->left != NULL)
         y->size += y->left->size; //y regains size of x's previous right sub-tree
 
+    // std::cout << "(after) x = "; x->print_node();
+    // std::cout << "(after) y = "; y->print_node();
+
 }
 
 /* up_rotate_left(x): rotates an element, x, up towards the root on the left */
@@ -59,6 +69,11 @@ void splay_t::up_rotate_left(node* x) {
         return;
 
     node *y = x->parent;
+    assert(x != y);
+
+    // std::cout << "x = "; x->print_node();
+    // std::cout << "y = "; y->print_node();
+
     y->right = x->left;
     if(y->right != NULL)
         y->right->parent = y;
@@ -81,6 +96,9 @@ void splay_t::up_rotate_left(node* x) {
     x->size += y->size; 
     if(y->right != NULL)
         y->size += y->right->size; 
+
+    // std::cout << "(after) x = "; x->print_node();
+    // std::cout << "(after) y = "; y->print_node();
 }
 
 /* check if an element, e, is inline with it's parent and grand-parent on the left */
@@ -107,8 +125,10 @@ bool splay_t::inline_right(node *e){
 splay_t::node* splay_t::split(node *e){
     e = splay(e);
     node *ret = e->right;
-    if(ret != NULL)
+    if(ret != NULL) {
         e->size -= ret->size;
+        ret->parent = NULL;
+    }
     e->right = NULL;
     return ret;
 };
@@ -127,6 +147,7 @@ splay_t::node* splay_t::join(node *T1, node *T2) {
     T1->right = T2;
     T1->size += T2->size;
     T2->parent = T1;
+    T2->path_parent_ptr = NULL;
     return T1;
 }
 
@@ -143,8 +164,8 @@ splay_t::node* splay_t::find(node *T, int k) {
         return NULL;
 
     std::cout << "looking for element " << k << ", current element id = " << T->key << std::endl;
-    if(k == T->key) {
-        std::cout << "found element, returning e "; 
+    if(k == T->key) { 
+        std::cout << "found key, returning e "; 
         T->print_node(); std::cout << std::endl;
         return T;
     }
@@ -181,7 +202,8 @@ int splay_t::rank(node *e){
         3. else rototate e up 2 steps, using alternating single rotation
 */
 splay_t::node *splay_t::splay(node *e) {
-    while(e->parent != NULL) { 
+    int i = 0;
+    while(e->parent != NULL && i < 10) { 
         if(e->parent->parent == NULL) { //if e is one step below root --> just rotate up to root
             if(e == e->parent->left)
                 up_rotate_right(e);
@@ -200,100 +222,118 @@ splay_t::node *splay_t::splay(node *e) {
             up_rotate_left(e);
             up_rotate_right(e);
         }
+        i++;
     }
     return e;
 }
 
-splay_t::node* splay_t::insert(node *T, int k, node *P) {
-    if(T == NULL)
-        return new node(k, P);
-
-    //find parent node    
-    node *rov = T;
-    node *parent = NULL;
-    while(rov != NULL){
-        parent = rov;
-        if(k < rov->key)
-            rov = rov->left;
-        else
-            rov = rov->right;
+splay_t::node* splay_t::bst_insert(node *T, node *e){
+    if(e->key == T->key) {
+        T->dups.push_back(e);
+        return T;
     }
 
-    //insert e into the BST
-    node *e = new node(k, P);
-    e->parent = parent;
-    if(k < parent->key) 
-        parent->left = e;
-    else 
-        parent->right = e;
-    //update subtree sizes along the parent path
-    while(parent != NULL) {
-        parent->size++;
-        parent = parent->parent;
-    }
-    //spay e to the root
-    return splay(e);
-}
-
-void splay_t::delete_element(node *e){
-    if(e == NULL) 
-        return; 
-    
-    auto e_parent = e->parent;
-    e->parent = NULL; //disconnect e from the tree, making a new tree with e as the root
-    auto ret = join(e->left, e->right);
-    ret->parent = e_parent;
-    std::cout << " joined children = ";
-    ret->print_node(); std::cout << std::endl;
-
-    //reconnect e's children back to the original tree
-    if(ret->parent != NULL) {
-        if(e == ret->parent->left)
-            ret->parent->left = ret;
-        else
-            ret->parent->right = ret;
-    }
-    //update sizes along the upwards path
-    while(e_parent != NULL){
-        e_parent->size--;
-        e_parent = e_parent->parent;
-    }
-
-    //delete mem
-    delete e;
-
-}
-
-void splay_t::delete_key(node *T, int key) {
-    auto *e = find(T, key);
-    delete_element(e);
-}
-
-
-splay_t::node* link_cut::find_path(splay_t::node *P, int lvl, std::vector<splay_t::node*> &paths) {
-    splay_t::node *path = splay_t::insert(NULL, lvl, P);
-    while(P != NULL) { 
-        if(P->left != NULL) {
-            if(P->right != NULL) {
-                if(P->right->size >= P->left->size) {
-                    paths.push_back(find_path(P->left, ++lvl, paths)); //recurse the left subtree for paths
-                    path =  splay_t::insert(path, lvl, NULL); //add the desired node to path and get the other paths
-                    P = P->right;
-                }
-            } else { // recurse the right subtree for other paths and continue left
-                paths.push_back(find_path(P->right, ++lvl, paths));
-                path =  splay_t::insert(path, lvl, NULL); //add left and cont
-                P = P->left;
-            }
-        } 
-        if(P->right != NULL) { //add the desired node to path and cont
-            path = splay_t::insert(path, ++lvl, NULL); 
-            P = P->right;
+    if(e->key < T->key) {
+        if(T->left != NULL)
+            return bst_insert(T->left, e);
+        else {
+            T->left = e;
+            e->parent = T;
         }
     }
-    paths.push_back(path);
-    return path;
+    else {
+        if(T->right != NULL)
+            return bst_insert(T->right, e);
+        else {
+            T->right = e;
+            e->parent = T;
+        }
+    }
+    return e;
 }
+
+splay_t::node* splay_t::insert(node *T, int data, int k, node *P) {
+    if(T == NULL)
+        return new node(data, k, P);
+
+    //find parent node    
+    node *e = new node(data, k, P);
+    auto ret = bst_insert(T, e);
+    if(ret == e) {
+        auto r = ret->parent; 
+        while(r != NULL){
+            r->size++;
+            r = r->parent;
+        }
+    }
+    //spay e to the root
+    return splay(ret);
+}
+
+/* swap_edge(x,y): swap all edges associated with x to be associated with y */
+void splay_t::swap_edge(node *x, node *y){
+    if(x->parent != NULL) {
+        if(x == x->parent->left)
+            x->parent->left = y;
+        else 
+            x->parent->right = y;
+    }
+    if(x->left != NULL)
+        x->left->parent = y;
+    if(x->right != NULL)
+        x->right->parent = y;
+
+}
+
+void splay_t::delete_element(node *T, node *e){
+    if(e == NULL) 
+        return; 
+
+    auto search = find(T, e->key);
+    if(search == NULL)
+        return;
+
+    if(search != e){
+        auto it = find_if(search->dups.begin(), search->dups.end(), [&] (const node* d) { return d == e; });
+        if(it != search->dups.end())
+            search->dups.erase(it);
+        return;
+    }
+    else {
+        if(!search->dups.empty()){
+            auto new_head = search->dups.front();
+            new_head->parent = e->parent;
+            swap_edge(e, new_head);
+            new_head->dups = e->dups;
+            std::swap(e, new_head);
+            new_head->dups.erase(new_head->dups.begin());
+            return;
+        }
+        else{ //disconnect e from the tree, making a new tree with e as the root
+            auto e_parent = e->parent;
+            e->parent = NULL; 
+            auto new_head = join(e->left, e->right);
+            new_head->parent = e_parent;
+            new_head->print_node(); std::cout << std::endl;
+            //update sizes along the upwards path
+            if(e_parent != NULL){
+                if(e == e_parent->left)
+                    e_parent->left = new_head;
+                else
+                    e_parent->right = new_head;
+            }
+            // std::cout << "e parent = "; e_parent->print_node();
+            // std::cout << "new head = "; new_head->print_node();
+            while(e_parent != NULL){
+                e_parent->size--;
+                e_parent = e_parent->parent;
+            }
+            //delete mem
+            delete e;
+        }
+    } 
+}
+
 
 splay_t::node* link_cut::get_rand_element(){
     int r_path = rand() % paths.size(); 
@@ -315,7 +355,7 @@ void link_cut::make_tree(int n){
     assert(n > 0);
     srand(89784654L); 
     
-    for(int i = 0; i < n; i++) {
+    for(int i = 0, d = 0; i < n; i++) {
         //std::cout << "current path count: " << i << std::endl;
         splay_t::node *T = NULL, *parent = NULL; 
         int start = 0;
@@ -324,44 +364,47 @@ void link_cut::make_tree(int n){
             //std::cout << "random e = " << std::endl; parent->print_node(); std::cout << std::endl;
             start = parent->key+1;
         }
-        T = splay_t::insert(T, start, parent);
+        T = splay_t::insert(T, d++, start, parent);
         int len = rand() % MAX_KEY; //generate random length of path
         //std::cout << "len = " << len << std::endl;
         for(int j = start+1; j < start+1+len; j++){ //build the path of nodes
-            T = splay_t::insert(T, j, NULL);
+            T = splay_t::insert(T, d++, j, NULL);
         }
-        //splay_t::inorder(T); std::cout << std::endl;
-
+        std::cout << "tree " << i << ": "; T->print_node(); splay_t::inorder(T); std::cout << std::endl;
         paths.push_back(T);
     }
 }
 
 
-splay_t::node* link_cut::access(splay_t::node *v){
+splay_t::node* link_cut::access(splay_t::node *v, int i){
+        std::cout << "Called access on "; v->print_node();
         splay_t::splay(v); //v is now root of it's auxillary tree
         auto v_right = split(v);  //split v and return it's right subtree
         if(v_right != NULL)
             v_right->path_parent_ptr = v;
-        if(v->path_parent_ptr != NULL) {
-            //std::cout << "v = "; v->print_node(); std::cout << std::endl;
+        if(v->path_parent_ptr != NULL && i < 5) {
+            std::cout << "v = "; v->print_node();
             auto *w = v->path_parent_ptr;
+            std::cout << "w = ";  w->print_node(); 
             splay(w);
             auto w_right = split(w);
-            w_right->path_parent_ptr = w;
-            //std::cout << "w = ";  w->print_node(); std::cout << std::endl;
-            //std::cout << "w->right = ";w_right->print_node(); std::cout << std::endl;
+            if(w_right != NULL) {
+                w_right->path_parent_ptr = w;
+                std::cout << "w->right = ";w_right->print_node();
+            }
+            std::cout << "w (after split) = ";  w->print_node();
             join(w, v);
-            //std::cout << "w after join = "; w->print_node(); std::cout << std::endl;
-            access(v);
+            std::cout << "w after join = "; w->print_node();
+            access(v, i++);
         }
-        //std::cout << "v now at root of tree" << std::endl;
+        //std::cout << "v now at root of tree of the represented tree" << std::endl;
         return v;
 }
 
-/* find_root(v): Gets the root of the splay tree that currently holds v */
+/* find_root(v): Finds the original root of the tree that contains v (e.g. not it's splay tree root, but the root of the tree the splay trees detail) */
 splay_t::node* link_cut::find_root(splay_t::node *v){
     int i = 0;
-    splay_t::node *R = access(v);
+    splay_t::node *R = access(v, 0);
     while(R->left != NULL)
         R = R->left;
     splay(R);
@@ -374,8 +417,8 @@ splay_t::node* link_cut::find_root(splay_t::node *v){
             2. v is keyed such that all of it's keys are larger than any key stored in w
 */
 splay_t::node* link_cut::link(splay_t::node *v, splay_t::node *w) {
-    access(v);
-    access(w);
+    access(v, 0);
+    access(w, 0);
     join(w, v);
     v->path_parent_ptr = NULL; //now that v is attached to w, it will no longer hold a path-parent-ptr
     return v;
@@ -383,7 +426,7 @@ splay_t::node* link_cut::link(splay_t::node *v, splay_t::node *w) {
 
 /* Cut(v): Detach v from it's current aux tree */
 splay_t::node* link_cut::cut(node *v){
-    access(v);
+    access(v, 0);
     auto path_parent = v->left;
     auto v_subtree = split(v->left); 
     v_subtree->path_parent_ptr = path_parent;
