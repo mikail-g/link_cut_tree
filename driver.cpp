@@ -107,20 +107,27 @@ int main(int argc, char *argv[]){
     }
     std::cout << "END TEST 2" << std::endl;
 
+    //test some cuts
+    std::cout << "TEST 3: Cut..." << std::endl;
+    splay_t::node* r_e = lc.get_rand_element();
+    while(r_e->size <= 1)
+        r_e = lc.get_rand_element();
+    auto p = r_e->left;
+    auto cut_re = lc.cut(r_e);
+    std::cout<< "parent after cut = "; sp.inorder(p); std::cout << std::endl;
+    p->print_node();
+    std::cout<< "cut element = "; sp.inorder(cut_re); std::cout << std::endl;
+    cut_re->print_node();
+    std::cout << "END TEST 3" << std::endl;
 
-    // //test some cuts
-    // std::cout << "Testing cut..." << std::endl;
-    // splay_t::node* r_e;
-    // for(int i = 0; i < 8; i++)
-    //     r_e = lc.get_rand_element(); 
-    // auto cut_re = lc.cut(r_e);
 
 
-    // std::cout << "Testing link..." << std::endl;
-    // auto w = lc.paths[5];
-    // auto v = lc.paths[6];
-    // auto l = lc.link(v, w);
-    // std::cout << "in order after link: "; sp.inorder(l); std::cout << std::endl;
+    std::cout << "TEST 4: Link..." << std::endl;
+    std::cout << "relink previous cut elements.." << std::endl;
+    auto l = lc.link(cut_re, p);
+    std::cout << "linked tree: "; sp.inorder(l); std::cout << std::endl;
+    std::cout << "END TEST 4" << std::endl;
+
 
     std::cout << "TEST 5: PATH QUERY..." << std::endl;
     auto i = lc.get_rand_element();
@@ -131,6 +138,7 @@ int main(int argc, char *argv[]){
     auto path_sum = lc.counting_query(i, j);
     std::cout << "number of elements between i and j = " << path_sum << std::endl;
     std::cout << "END TEST 5" << std::endl;
+
 
     
     std::cout << "Test done, exiting" << std::endl;

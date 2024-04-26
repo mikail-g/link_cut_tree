@@ -125,12 +125,15 @@ bool splay_t::inline_right(node *e){
 */
 splay_t::node* splay_t::split(node *e){
     e = splay(e);
+    std::cout << "splitting on "; e->print_node();
     node *ret = e->right;
     if(ret != NULL) {
         e->size -= ret->size;
         ret->parent = NULL;
+        std::cout << "returning: "; ret->print_node();
     }
     e->right = NULL;
+    std::cout << "origin tree: "; e->print_node();
     return ret;
 };
 
@@ -425,16 +428,25 @@ splay_t::node* link_cut::find_branch(splay_t::node *v) {
             (2): p is the true root of the splay tree
 */
 splay_t::node* link_cut::link(splay_t::node *v, splay_t::node *w) {
-    path(v,0);
+    assert(v->left == NULL); //indicates root of branch
+    std::cout << "node to link: "; v->print_node();
+    std::cout << "traversal: "; inorder(v); std::cout << std::endl;
     if(v->left != NULL) {
         std::cout << "ERROR: v not a tree root, cannot link, must call cut first" << std::endl;
         assert(v->left == NULL);
     }
-    path(w,0);
+    //path(w,0);
+    std::cout << "node to link to: "; w->print_node();
+    std::cout << " w traversal: "; inorder(w); std::cout << std::endl;
     //note: cannot call join here because join might splay an element > w (which is not the path pointer) to the root of the tree before adding v
     // instead, reverse it and since v has to have no left child, it is safe to make w the left child of v. 
     v->left = w;
+    v->size += w->size;
+    std::cout << "after left link: ";  v->print_node();
     w->parent = v; 
+    std::cout << "after parent link: ";  w->print_node();
+    std::cout << "after link: ";  v->print_node();
+    //std::cout << "traversal: "; inorder(v);
     v->path_parent_ptr = w->path_parent_ptr; //now that w is predecessor of v, set update v's parent path ptr
     w->path_parent_ptr = NULL;
     return v;
@@ -446,28 +458,39 @@ splay_t::node* link_cut::link(splay_t::node *v, splay_t::node *w) {
             
             */
 splay_t::node* link_cut::cut(node *v){
-    std::cout << "original auxiliary tree: "; splay_t::inorder(v); std::cout << std::endl;
-
+    //std::cout << "original auxiliary tree: "; splay_t::inorder(v); std::cout << std::endl;
     path(v, 0);
+    std::cout << "v (start): " ;splay_t::inorder(v);  std::cout << std::endl;
+    std::cout << "v (start): " ;v->print_node();  std::cout << std::endl;
     auto path_parent = v->left;
-    auto v_subtree = split(v); 
+    std::cout << "path parent (pre split): "; splay_t::inorder(path_parent);  std::cout << std::endl;
+    std::cout << "path parent (pre split): " ; path_parent->print_node();  std::cout << std::endl;
+    auto v_subtree = split(v->left); 
+    std::cout << "path parent traversal (post split): "; splay_t::inorder(path_parent);  std::cout << std::endl;
+    std::cout << "v traversal (post split): " ;splay_t::inorder(v_subtree);  std::cout << std::endl;
+    std::cout << "path parent(post split): " ; path_parent->print_node();  std::cout << std::endl;
+    std::cout << "v (post split): " ;v_subtree->print_node();  std::cout << std::endl;
     if(v_subtree != NULL)
         v_subtree->path_parent_ptr = path_parent;
-    if(v_subtree->left != NULL)
+    if(v_subtree->left != NULL) {
         v_subtree->left = NULL;
-    std::cout << "updated auxiliary tree: " ;splay_t::inorder(v);  std::cout << std::endl;
-    std::cout << "cut tree: "; splay_t::inorder(v); std::cout << std::endl;
+        v_subtree->size = v_subtree->right != NULL ? v_subtree->right->size+1 : 1;
+    }
+    std::cout << "path parent traversal (post split): "; splay_t::inorder(path_parent);  std::cout << std::endl;
+    std::cout << "v traversal (post split): " ;splay_t::inorder(v_subtree);  std::cout << std::endl;
+    std::cout << "path parent (post split): " ; path_parent->print_node();  std::cout << std::endl;
+    std::cout << "v (post split): " ;v_subtree->print_node();  std::cout << std::endl;
     return v_subtree;
 }
 
 int link_cut::counting_query(node *i, node *j){
     path(i, 0); //bring i to the root of the virtual tree
-    std::cout << "splaying j.." << std::endl;
+    //std::cout << "splaying j.." << std::endl;
     splay(j); //get j to the root it's base tree
-    std::cout << "done" << std::endl;
+    //std::cout << "done" << std::endl;
     while(j->path_parent_ptr != NULL){
         auto *lca = j->path_parent_ptr; 
-        std::cout << "lca = "; lca->print_node();
+        //std::cout << "lca = "; lca->print_node();
         splay(lca);
         if(lca->path_parent_ptr == NULL){ //found the lca of i and j
             int lca_size = lca->left != NULL ? lca->size - lca->left->size : lca->size;
