@@ -96,7 +96,7 @@ int main(int argc, char *argv[]){
     for(int i = 0; i < 5; i++){
         auto e = lc.get_rand_element();
         std::cout << "NEW path e = "; e->print_node();
-        auto p = lc.path(e, 0);
+        auto p = lc.path(e);
         print_subtree(p);
         std::cout << "END path" << std::endl;
     }

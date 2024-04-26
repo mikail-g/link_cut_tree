@@ -95,7 +95,7 @@ class link_cut : public splay_t{
     void make_tree(int n);
     splay_t::node* get_rand_element();
 
-    splay_t::node* path(splay_t::node *v, int i); 
+    splay_t::node* path(splay_t::node *v); 
     splay_t::node* find_root(splay_t::node *v);
     splay_t::node* find_branch(splay_t::node *v);
     splay_t::node* cut(splay_t::node *v);

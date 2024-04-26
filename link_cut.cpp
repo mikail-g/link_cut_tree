@@ -377,11 +377,7 @@ void link_cut::make_tree(int n){
 }
 
 
-splay_t::node* link_cut::path(splay_t::node *v, int i){
-        // if(i > 10){
-        //     std::cout << "ERROR" << std::endl;
-        //     return v; 
-        // }
+splay_t::node* link_cut::path(splay_t::node *v){
         splay(v); //v is now root of it's auxillary tree
         auto v_right = split(v);  //split v and return it's right subtree
         if(v_right != NULL)
@@ -399,18 +395,18 @@ splay_t::node* link_cut::path(splay_t::node *v, int i){
             //std::cout << "w (after split) = ";  w->print_node();
             join(w, v);
             std::cout << "path parent after join = "; w->print_node();
-            path(v,++i);
+            path(v);
         }
-        //std::cout << "v now at root of tree of the represented tree" << std::endl;
         return v;
 }
 
-/* find_root(v): Finds the original root of the tree that contains v (e.g. not it's splay tree root, but the root of the tree the splay trees detail) */
+/* find_root(v): Finds the real root of the virtual tree T */
 splay_t::node* link_cut::find_root(splay_t::node *v){
-    splay_t::node *R = path(v,0);
-    while(R->left != NULL)
-        R = R->left;
-    splay(R);
+    splay_t::node *R = path(v);
+    // while(R->left != NULL)
+    //     R = R->left;
+    // splay(R);
+    inorder(v);
     return R;
 }
 
@@ -426,6 +422,12 @@ splay_t::node* link_cut::find_branch(splay_t::node *v) {
         Assumptions:
             (1): all keys in v are higher than those in w (keyed by depth)
             (2): p is the true root of the splay tree
+        Steps:
+            (1): ensure v is a path root (not allowed to link otherwise)
+            (2): make w left child of v, since v has no predecessor, update sizes for the current auxiliary tree
+            (3): update sizes since v is technically the root right now
+            (4): update path-parent ptrs
+
 */
 splay_t::node* link_cut::link(splay_t::node *v, splay_t::node *w) {
     assert(v->left == NULL); //indicates root of branch
@@ -435,59 +437,47 @@ splay_t::node* link_cut::link(splay_t::node *v, splay_t::node *w) {
         std::cout << "ERROR: v not a tree root, cannot link, must call cut first" << std::endl;
         assert(v->left == NULL);
     }
-    //path(w,0);
     std::cout << "node to link to: "; w->print_node();
     std::cout << " w traversal: "; inorder(w); std::cout << std::endl;
     //note: cannot call join here because join might splay an element > w (which is not the path pointer) to the root of the tree before adding v
     // instead, reverse it and since v has to have no left child, it is safe to make w the left child of v. 
     v->left = w;
     v->size += w->size;
-    std::cout << "after left link: ";  v->print_node();
     w->parent = v; 
-    std::cout << "after parent link: ";  w->print_node();
-    std::cout << "after link: ";  v->print_node();
-    //std::cout << "traversal: "; inorder(v);
     v->path_parent_ptr = w->path_parent_ptr; //now that w is predecessor of v, set update v's parent path ptr
     w->path_parent_ptr = NULL;
     return v;
 }
 
 /* Cut(v): Detach v from it's parent:
-            (1): move v to root of the virtual tree, such that all nodes that come below v in $T$ are in the right subtree
-            (2): split v 
-            
-            */
+            (1): Bring v to root of it's tree (all nodes in right subtree below me in path -- also to remove)
+            (2): split(v->left) so v stays with it's right subtree
+            (3): reconnect v to the main path by setting the previous v->left as the path-parent ptr
+*/
 splay_t::node* link_cut::cut(node *v){
-    //std::cout << "original auxiliary tree: "; splay_t::inorder(v); std::cout << std::endl;
-    path(v, 0);
-    std::cout << "v (start): " ;splay_t::inorder(v);  std::cout << std::endl;
+    if(v == NULL)
+        return NULL;
+    path(v);
     std::cout << "v (start): " ;v->print_node();  std::cout << std::endl;
+    std::cout << "v (start): " ;splay_t::inorder(v);  std::cout << std::endl;
     auto path_parent = v->left;
-    std::cout << "path parent (pre split): "; splay_t::inorder(path_parent);  std::cout << std::endl;
-    std::cout << "path parent (pre split): " ; path_parent->print_node();  std::cout << std::endl;
+    std::cout << "path parent (start): " ; path_parent->print_node();  std::cout << std::endl;
+    std::cout << "path parent (start): "; splay_t::inorder(path_parent);  std::cout << std::endl;
     auto v_subtree = split(v->left); 
-    std::cout << "path parent traversal (post split): "; splay_t::inorder(path_parent);  std::cout << std::endl;
-    std::cout << "v traversal (post split): " ;splay_t::inorder(v_subtree);  std::cout << std::endl;
-    std::cout << "path parent(post split): " ; path_parent->print_node();  std::cout << std::endl;
-    std::cout << "v (post split): " ;v_subtree->print_node();  std::cout << std::endl;
-    if(v_subtree != NULL)
+    if(v_subtree != NULL) {
         v_subtree->path_parent_ptr = path_parent;
-    if(v_subtree->left != NULL) {
-        v_subtree->left = NULL;
-        v_subtree->size = v_subtree->right != NULL ? v_subtree->right->size+1 : 1;
+        if(v_subtree->left != NULL) {
+            v_subtree->left = NULL;
+            v_subtree->size = v_subtree->right != NULL ? v_subtree->right->size+1 : 1;
+        }
     }
-    std::cout << "path parent traversal (post split): "; splay_t::inorder(path_parent);  std::cout << std::endl;
-    std::cout << "v traversal (post split): " ;splay_t::inorder(v_subtree);  std::cout << std::endl;
-    std::cout << "path parent (post split): " ; path_parent->print_node();  std::cout << std::endl;
-    std::cout << "v (post split): " ;v_subtree->print_node();  std::cout << std::endl;
     return v_subtree;
 }
 
 int link_cut::counting_query(node *i, node *j){
-    path(i, 0); //bring i to the root of the virtual tree
-    //std::cout << "splaying j.." << std::endl;
+    path(i); //bring i to the root of the virtual tree
     splay(j); //get j to the root it's base tree
-    //std::cout << "done" << std::endl;
+
     while(j->path_parent_ptr != NULL){
         auto *lca = j->path_parent_ptr; 
         //std::cout << "lca = "; lca->print_node();
