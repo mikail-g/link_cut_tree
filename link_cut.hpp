@@ -40,8 +40,11 @@ class splay_t{
                     std::cout << ", left child key = " << left->key;
                 if(right != NULL)
                     std::cout << ", right child key = " << right->key;
-                if(path_parent_ptr != NULL)
+                if(path_parent_ptr != NULL) {
                     std::cout << ", path parent key = " << path_parent_ptr->key;
+                    std::cout << ", path parent dat = " << path_parent_ptr->data;
+                }
+
                 std::cout << std::endl;
 
             }
@@ -80,7 +83,7 @@ class splay_t{
                     Connected nodes in the represented tree, T, that are not on the same preerred path (and therefore not in the same aux tree S), 
                     are connected via a path-parent pointer, which is stored in the root of the aux tree S, representing the path
 
-        Solidifying: When an access to a node v is made in the represented tree, we find the path from the node v to the root of the represented tree 
+        Solidifying: When an path to a node v is made in the represented tree, we find the path from the node v to the root of the represented tree 
 */
 class link_cut : public splay_t{
     public:
@@ -92,10 +95,12 @@ class link_cut : public splay_t{
     void make_tree(int n);
     splay_t::node* get_rand_element();
 
-    splay_t::node* access(splay_t::node *v); 
+    splay_t::node* path(splay_t::node *v, int i); 
     splay_t::node* find_root(splay_t::node *v);
-    splay_t::node* cut(node *v);
-    splay_t::node* link(node *v, node *w);
+    splay_t::node* find_branch(splay_t::node *v);
+    splay_t::node* cut(splay_t::node *v);
+    splay_t::node* link(splay_t::node *v, splay_t::node *w);
+    int counting_query(splay_t::node *i, splay_t::node *j);
 
 
     link_cut(bool dbg){
